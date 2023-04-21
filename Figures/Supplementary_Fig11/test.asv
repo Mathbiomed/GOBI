@@ -1,0 +1,118 @@
+clc;
+clear;
+close all;
+
+addpath('../GOBI') 
+
+%% parameter
+range = 60; % range of time-series
+time_interval = 1/20; % 1/time_interval represents sampling rate
+range_interval = 20;
+num_data = 10;
+
+tspan = linspace(0,range, range/time_interval+1);
+length_interval = range_interval / time_interval;
+
+%% parameter of X (source)
+time_interval_pre = 1/2;
+xt_pre = linspace(0,range, range/time_interval_pre+1);
+xt = linspace(0,range, range/time_interval+1);
+
+%% parameter for ODE
+alpha = 0.5;
+beta = 0;
+gamma = 0.5;
+delta = 1;
+
+%% create time series
+y_total = {};
+for i = 1:num_data
+    %% create source (X)
+    x_pre = rand([length(xt_pre),1])*2 - 0.5;
+    x_source = spline(xt_pre,x_pre,xt);
+    
+    %% initial condition
+    y_initial = rand([1,2])*2 - 0.5; % initial condition for Y and Z
+    
+    %% simulate ODE
+    y_ori = zeros(length(tspan),3);
+    y_ori(:,1) = x_source;
+
+    % first ode: positive regulation from X to Y and Z
+    [t1, y1] = ode45(@(t,y) XY_pos(t,y,xt(1:length_interval+1),x_source(1:length_interval+1),alpha,delta), tspan(1:length_interval+1), y_initial);
+    y_ori(1:length_interval+1,2:3) = y1;
+    
+    % second ode: non-monotone regulation from X to Y / positive regulation
+    % from X to Z
+    [t2, y2] = ode45(@(t,y) XY_mix(t,y,xt(length_interval+1:2*length_interval+1),x_source(length_interval+1:2*length_interval+1),beta,gamma,delta), tspan(length_interval+1:2*length_interval+1), y1(end,:));
+    y_ori(length_interval+1:2*length_interval+1,2:3) = y2;
+
+    % third ode: positive, negative regulation from X to Y and Z,
+    % respectively
+    [t3, y3] = ode45(@(t,y) XY_neg(t,y,xt(length_interval*2+1:3*length_interval+1),x_source(length_interval*2+1:3*length_interval+1),alpha,delta), tspan(length_interval*2+1:3*length_interval+1), y2(end,:));
+    y_ori(length_interval*2+1:3*length_interval+1,2:3) = y3;
+    
+    % save time series at the variable 'y_total'
+    y_total{end+1} = y_ori;
+    
+    figure(1)
+    plot(tspan, y_ori(:,1), 'k')
+    hold on
+    plot(tspan, y_ori(:,2), 'r')
+    hold on
+    plot(tspan, y_ori(:,3), 'b')
+end
+
+%% compute RDS
+% parameters for moving window
+size_window = 100;
+move_window = 10;
+num_window = (range / time_interval - size_window) / move_window + 1;
+thres_noise = 0;
+
+S_total = zeros(num_data, num_window,2);
+L_total = zeros(num_data, num_window,2);
+
+for i = 1:num_data
+    % import time series
+    y_tmp = cell2mat(y_total(i));
+    
+    % cut using moving window technique
+    for j = 1:num_window
+        % import single time series
+        y_target_tmp = y_tmp(1 + move_window*(j-1):size_window + move_window*(j-1),:);
+        y_target = y_target_tmp;
+        t_target = tspan(1 + move_window*(j-1):size_window + move_window*(j-1));
+        
+        %normalize the time series
+        for k = 1:3
+            y_target(:,k) = y_target_tmp(:,k) - min(y_target_tmp(:,k));
+            y_target(:,k) = y_target(:,k) / max(y_target(:,k));
+        end
+        
+        % compute RDS for the regulation from X to Y
+        [score_list, t_1, t_2] = RDS_dim1(y_target(:,1), y_target(:,2), t_target, time_interval);
+        for k = 1:2
+            score = reshape(score_list(:,:,k),[length(t_target),length(t_target)]);
+            loca_plus = find(score > thres_noise);
+            loca_minus = find(score < -thres_noise);
+            if isempty(loca_plus) && isempty(loca_minus)
+                s = 1;    
+            else
+                s = (sum(score(loca_plus)) + sum(score(loca_minus)))/ (abs(sum(score(loca_plus))) + abs(sum(score(loca_minus))));
+            end
+            l = (length(loca_minus) + length(loca_plus)) / (length(t_1)*length(t_2)/2);
+            S_total(i,j,k) = s;
+            L_total(i,j,k) = l;
+        end        
+    end
+end
+
+%% plot
+figure(1)
+
+figure(2)
+S_pos = reshape(S_total(:,:,1),[num_data, num_window]);
+S_neg = reshape(S_total(:,:,2),[num_data, num_window]);
+window_list = [2.5:0.5:55]
+boxplot(S_pos)
