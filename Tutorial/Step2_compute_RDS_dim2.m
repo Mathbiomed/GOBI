@@ -43,14 +43,14 @@ Listener = afterEach(dq, @(varargin) waitbar((completedJobs/N),wb,sprintf('Compl
 %% from all data, calculate regulation detection score & region
 disp('calculate regulation detection score...')
 S_total_list = zeros(num_pair,num_type,num_data); % save regulation-detection score for all data
-L_total_list = zeros(num_pair,num_type,num_data); % save regulation-detection region for all data
+R_total_list = zeros(num_pair,num_type,num_data); % save regulation-detection region for all data
 parfor i = 1:num_data
     send(dq,i)
     y_target = cell2mat(y_total(i));
     t_target = t;
     
     S_total = zeros(num_pair,num_type); % save regulation-detection score for each data
-    L_total = zeros(num_pair,num_type); % save regulation-detection region for eacg data
+    R_total = zeros(num_pair,num_type); % save regulation-detection region for eacg data
     
     for j = 1:length(component_list_dim2(:,1))
         st1 = component_list_dim2(j,1); % index for cause1
@@ -76,17 +76,17 @@ parfor i = 1:num_data
             else
                 s = (sum(score(loca_plus)) + sum(score(loca_minus)))/ (abs(sum(score(loca_plus))) + abs(sum(score(loca_minus))));
             end
-            l = (length(loca_minus) + length(loca_plus)) / (length(t_1)*length(t_2)/2);
+            r = (length(loca_minus) + length(loca_plus)) / (length(t_1)*length(t_2)/2);
             S_total(j,k) = s;
-            L_total(j,k) = l;
+            R_total(j,k) = r;
         end
     end
     S_total_list(:,:,i) = S_total;
-    L_total_list(:,:,i) = L_total;    
+    R_total_list(:,:,i) = R_total;    
 end
 
 filename = 'RDS_dim2';
-save(filename, 'S_total_list', 'L_total_list','component_list_dim2', 'num_component', 'num_pair','num_type','num_data')
+save(filename, 'S_total_list', 'R_total_list','component_list_dim2', 'num_component', 'num_pair','num_type','num_data')
 
 delete(gcp('nocreate'))
 
