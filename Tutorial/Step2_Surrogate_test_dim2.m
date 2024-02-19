@@ -9,8 +9,8 @@ load('RDS_dim2')
 load('Delta_dim2')
 
 %% parameters
-if thres_L == 0
-    thres_L = 0.05;
+if thres_R == 0
+    thres_R = 0.05;
 end
 thres_noise = 0;
 
@@ -116,7 +116,7 @@ for i = 1:num_candidate_boot
         else
             s_ori = (sum(score_tmp(loca_plus)) + sum(score_tmp(loca_minus)))/ (abs(sum(score_tmp(loca_plus))) + abs(sum(score_tmp(loca_minus))));
         end
-        l_ori = (length(loca_minus) + length(loca_plus)) / (length(t_1)*length(t_2)/2);
+        r_ori = (length(loca_minus) + length(loca_plus)) / (length(t_1)*length(t_2)/2);
      
         % using one sided Z test to compute p value (z score)
         [h1,p1] = ztest(s_ori, mean(boot_tmp(:,1)),std(boot_tmp(:,1)),'Tail','right');

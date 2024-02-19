@@ -8,8 +8,8 @@ load('data_with_options')
 load('RDS_dim2')
 
 %% parameters
-if thres_L == 0
-    thres_L = 0.05;
+if thres_R == 0
+    thres_R = 0.05;
 end
 
 %% compute TRS
@@ -17,15 +17,15 @@ TRS_total = zeros(num_pair, num_type);
 for i = 1:num_pair
     for j = 1:num_type
         S_tmp = reshape(S_total_list(i,j,:),[num_data,1]);
-        L_tmp = reshape(L_total_list(i,j,:),[num_data,1]);
+        R_tmp = reshape(R_total_list(i,j,:),[num_data,1]);
         
         S_processed = S_threshold(S_tmp, thres_S);
-        L_processed = L_threshold(L_tmp, thres_L);
+        R_processed = R_threshold(R_tmp, thres_R);
         
-        if sum(L_processed) == 0
+        if sum(R_processed) == 0
             TRS_tmp = 0;
         else
-            TRS_tmp = sum(S_processed .* L_processed) / sum(L_processed);
+            TRS_tmp = sum(S_processed .* R_processed) / sum(R_processed);
         end
         TRS_total(i,j) = TRS_tmp;
     end
@@ -83,17 +83,17 @@ for i = 1:num_candidate_delta
     S_tmp_ori = reshape(S_total_list(idx,type_tmp,:), [num_data,1]);
     S_tmp_1 = reshape(S_total_list(idx,cor_type(type_tmp,1),:), [num_data,1]);
     S_tmp_2 = reshape(S_total_list(idx,cor_type(type_tmp,2),:), [num_data,1]);
-    L_ori = reshape(L_total_list(idx,type_tmp,:), [num_data,1]);
-    L_tmp_1 = reshape(L_total_list(idx,cor_type(type_tmp,1),:), [num_data,1]);
-    L_tmp_2 = reshape(L_total_list(idx,cor_type(type_tmp,2),:), [num_data,1]);
+    R_ori = reshape(R_total_list(idx,type_tmp,:), [num_data,1]);
+    R_tmp_1 = reshape(R_total_list(idx,cor_type(type_tmp,1),:), [num_data,1]);
+    R_tmp_2 = reshape(R_total_list(idx,cor_type(type_tmp,2),:), [num_data,1]);
     
     % use only when R > R^thres
-    L_processed_ori = L_threshold(L_ori,thres_L);
-    L_processed_1 = L_threshold(L_tmp_1,thres_L);
-    L_processed_2 = L_threshold(L_tmp_2,thres_L);
-    S_processed_ori = S_tmp_ori .* L_processed_ori;
-    S_processed_1 = S_tmp_1 .* L_processed_1;
-    S_processed_2 = S_tmp_2 .* L_processed_2;
+    R_processed_ori = R_threshold(R_ori,thres_R);
+    R_processed_1 = R_threshold(R_tmp_1,thres_R);
+    R_processed_2 = R_threshold(R_tmp_2,thres_R);
+    S_processed_ori = S_tmp_ori .* R_processed_ori;
+    S_processed_1 = S_tmp_1 .* R_processed_1;
+    S_processed_2 = S_tmp_2 .* R_processed_2;
     
     S_processed_1(find(S_processed_1 == 0)) = NaN;
     S_processed_2(find(S_processed_2 == 0)) = NaN;

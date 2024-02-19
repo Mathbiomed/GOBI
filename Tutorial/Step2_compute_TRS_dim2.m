@@ -8,8 +8,8 @@ load('data_with_options')
 load('RDS_dim2')
 
 %% parameter
-if thres_L == 0
-    thres_L = 0.05;
+if thres_R == 0
+    thres_R = 0.05;
 end
 dimension = 2;
 %% compute TRS for each pair of 1D regulation
@@ -17,15 +17,15 @@ TRS_total = zeros(num_pair, num_type);
 for i = 1:num_pair
     for j = 1:num_type
         S_tmp = reshape(S_total_list(i,j,1:end),[num_data,1]); % import regulation-detection score
-        L_tmp = reshape(L_total_list(i,j,1:end),[num_data,1]); % import regulation-detection region
+        R_tmp = reshape(R_total_list(i,j,1:end),[num_data,1]); % import regulation-detection region
         
         S_processed = S_threshold(S_tmp, thres_S); % test whether S > S^thres
-        L_processed = L_threshold(L_tmp, thres_L); % test whether R < R_thres
+        R_processed = R_threshold(R_tmp, thres_R); % test whether R < R_thres
         
-        if sum(L_processed) == 0
+        if sum(R_processed) == 0
             TRS_tmp = nan;
         else
-            TRS_tmp = sum(S_processed .* L_processed) / sum(L_processed); % compute TRS
+            TRS_tmp = sum(S_processed .* R_processed) / sum(R_processed); % compute TRS
         end
         TRS_total(i,j) = TRS_tmp;
     end
