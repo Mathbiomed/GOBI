@@ -11,6 +11,7 @@ load('Surrogate_dim2')
 
 %% 1D regulation  
 TRS_1D_result = zeros(num_component,1);
+regulation_network_dim1 = zeros(num_component);
 for i = 1:num_component
     % indexing all the causes of each target
     index_list = [];
